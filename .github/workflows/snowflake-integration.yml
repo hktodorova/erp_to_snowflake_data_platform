@@ -1,0 +1,84 @@
+name: Snowflake Integration
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: snowflake-integration-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  dbt-snowflake-integration:
+    name: dbt build and test on Snowflake
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+
+    env:
+      SNOWFLAKE_ACCOUNT: ${{ secrets.SNOWFLAKE_ACCOUNT }}
+      SNOWFLAKE_USER: ${{ secrets.SNOWFLAKE_USER }}
+      SNOWFLAKE_PASSWORD: ${{ secrets.SNOWFLAKE_PASSWORD }}
+      SNOWFLAKE_ROLE: ${{ secrets.SNOWFLAKE_ROLE }}
+      SNOWFLAKE_DATABASE: ${{ secrets.SNOWFLAKE_DATABASE }}
+      SNOWFLAKE_WAREHOUSE: ${{ secrets.SNOWFLAKE_WAREHOUSE }}
+      SNOWFLAKE_SCHEMA: CI_${{ github.run_id }}_${{ github.run_attempt }}
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Check required Snowflake secrets
+        shell: bash
+        run: |
+          missing=0
+          for secret in \
+            SNOWFLAKE_ACCOUNT \
+            SNOWFLAKE_USER \
+            SNOWFLAKE_PASSWORD \
+            SNOWFLAKE_ROLE \
+            SNOWFLAKE_DATABASE \
+            SNOWFLAKE_WAREHOUSE; do
+            if [ -z "${!secret}" ]; then
+              echo "Missing required GitHub secret: ${secret}"
+              missing=1
+            fi
+          done
+          exit "$missing"
+
+      - name: dbt deps
+        working-directory: dbt
+        run: dbt deps
+
+      - name: dbt debug
+        working-directory: dbt
+        run: dbt debug --profiles-dir . --target ci
+
+      - name: dbt parse
+        working-directory: dbt
+        run: dbt parse --profiles-dir . --target ci
+
+      - name: dbt seed
+        working-directory: dbt
+        run: dbt seed --profiles-dir . --target ci --full-refresh
+
+      - name: dbt build
+        working-directory: dbt
+        run: dbt build --profiles-dir . --target ci
+
+      - name: Cleanup CI schema
+        if: always()
+        working-directory: dbt
+        run: dbt run-operation drop_ci_schema --args "{schema_name: '${SNOWFLAKE_SCHEMA}'}" --profiles-dir . --target ci

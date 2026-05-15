@@ -1,0 +1,4 @@
+environment = "prod"
+database_name = "ENTERPRISE_DWH"
+warehouse_auto_suspend_seconds = 60
+analyst_countries = ["CH", "DE", "AT", "FR", "IT"]
