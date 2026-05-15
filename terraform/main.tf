@@ -153,10 +153,10 @@ resource "snowflake_masking_policy" "mask_email" {
 }
 
 resource "snowflake_row_access_policy" "regional_country_filter" {
-  database    = snowflake_database.dwh.name
-  schema      = snowflake_schema.schemas["GOVERNANCE"].name
-  name        = "REGIONAL_COUNTRY_FILTER"
-  body        = "current_role() in ('${snowflake_account_role.roles["ROLE_DATA_PLATFORM_ADMIN"].name}', '${snowflake_account_role.roles["ROLE_TRANSFORM"].name}') or country_code in (${join(",", [for c in var.analyst_countries : "'${c}'"])})"
+  database = snowflake_database.dwh.name
+  schema   = snowflake_schema.schemas["GOVERNANCE"].name
+  name     = "REGIONAL_COUNTRY_FILTER"
+  body     = "current_role() in ('${snowflake_account_role.roles["ROLE_DATA_PLATFORM_ADMIN"].name}', '${snowflake_account_role.roles["ROLE_TRANSFORM"].name}') or country_code in (${join(",", [for c in var.analyst_countries : "'${c}'"])})"
 
   argument {
     name = "COUNTRY_CODE"
