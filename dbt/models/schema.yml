@@ -1,0 +1,238 @@
+version: 2
+
+models:
+  - name: stg_erp_customers
+    description: Normalized ERP customer data from raw JSON payloads.
+    columns:
+      - name: customer_id
+        data_tests: [not_null, unique]
+      - name: email
+        data_tests: [not_null]
+      - name: country_code
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['CH', 'DE', 'FR', 'IT', 'AT', 'NL', 'BE', 'ES', 'UK', 'US']
+      - name: customer_segment
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['enterprise', 'mid_market', 'smb', 'strategic']
+
+  - name: stg_erp_customers_history
+    description: Append-only ERP customer history used by Data Vault satellites.
+    columns:
+      - name: customer_id
+        data_tests: [not_null]
+      - name: ingested_at
+        data_tests: [not_null]
+      - name: customer_hk
+        description: Derived in downstream Data Vault models.
+
+  - name: stg_erp_orders
+    description: Normalized ERP order data from raw JSON payloads.
+    columns:
+      - name: order_id
+        data_tests: [not_null, unique]
+      - name: customer_id
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('stg_erp_customers')
+                field: customer_id
+      - name: order_date
+        data_tests: [not_null]
+      - name: currency
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['CHF', 'EUR', 'USD', 'GBP']
+      - name: order_status
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['open', 'released', 'invoiced', 'shipped', 'cancelled', 'void']
+      - name: net_amount
+        data_tests:
+          - not_null
+          - dbt_utils.expression_is_true:
+              arguments:
+                expression: ">= 0"
+
+  - name: hub_customer
+    description: Data Vault hub for stable customer business keys.
+    columns:
+      - name: customer_hk
+        data_tests: [not_null, unique]
+      - name: customer_id
+        data_tests: [not_null, unique]
+
+  - name: hub_order
+    description: Data Vault hub for stable order business keys.
+    columns:
+      - name: order_hk
+        data_tests: [not_null, unique]
+      - name: order_id
+        data_tests: [not_null, unique]
+
+  - name: link_customer_order
+    description: Data Vault link between customers and orders.
+    columns:
+      - name: customer_order_hk
+        data_tests: [not_null, unique]
+      - name: order_hk
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('hub_order')
+                field: order_hk
+      - name: customer_hk
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('hub_customer')
+                field: customer_hk
+
+  - name: sat_customer_details
+    description: Append-only Data Vault satellite preserving one row per customer descriptive change.
+    columns:
+      - name: customer_hk
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('hub_customer')
+                field: customer_hk
+      - name: load_datetime
+        data_tests: [not_null]
+      - name: hashdiff
+        data_tests: [not_null]
+      - name: country_code
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['CH', 'DE', 'FR', 'IT', 'AT', 'NL', 'BE', 'ES', 'UK', 'US']
+      - name: customer_segment
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['enterprise', 'mid_market', 'smb', 'strategic']
+
+  - name: fact_revenue
+    description: Revenue fact table for BI and finance reporting.
+    columns:
+      - name: order_id
+        data_tests: [not_null, unique]
+      - name: customer_id
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_customer')
+                field: customer_id
+      - name: currency
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['CHF', 'EUR', 'USD', 'GBP']
+      - name: order_status
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['open', 'released', 'invoiced', 'shipped']
+      - name: net_amount
+        data_tests:
+          - not_null
+          - dbt_utils.expression_is_true:
+              arguments:
+                expression: ">= 0"
+
+  - name: dim_customer
+    description: Current customer dimension with masked PII available through governed views.
+    columns:
+      - name: customer_id
+        data_tests: [not_null, unique]
+      - name: country_code
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['CH', 'DE', 'FR', 'IT', 'AT', 'NL', 'BE', 'ES', 'UK', 'US']
+      - name: customer_segment
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['enterprise', 'mid_market', 'smb', 'strategic']
+
+  - name: feature_customer_revenue_90d
+    description: Customer-level revenue features for ML and segmentation use cases.
+    columns:
+      - name: customer_id
+        data_tests:
+          - not_null
+          - unique
+          - relationships:
+              arguments:
+                to: ref('dim_customer')
+                field: customer_id
+      - name: as_of_timestamp
+        data_tests: [not_null]
+      - name: run_id
+        data_tests: [not_null]
+      - name: orders_90d
+        data_tests:
+          - dbt_utils.expression_is_true:
+              arguments:
+                expression: ">= 0"
+      - name: revenue_90d
+        data_tests:
+          - dbt_utils.expression_is_true:
+              arguments:
+                expression: ">= 0"
+
+  - name: quality_order_reconciliation
+    description: Row-count reconciliation across raw, staging and mart layers.
+    columns:
+      - name: raw_order_count
+        data_tests: [not_null]
+      - name: staged_order_count
+        data_tests: [not_null]
+      - name: mart_order_count
+        data_tests: [not_null]
+
+  - name: quality_revenue_anomaly_daily
+    description: Daily revenue anomaly detection using trailing z-score logic.
+    columns:
+      - name: order_date
+        data_tests: [not_null]
+      - name: revenue_z_score
+        data_tests: [not_null]
+
+  - name: model_sla_status
+    description: SLA status view for freshness monitoring of business marts.
+    columns:
+      - name: model_name
+        data_tests: [not_null, unique]
+      - name: sla_status
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['OK', 'BREACH']
+
+exposures:
+  - name: executive_revenue_dashboard
+    type: dashboard
+    maturity: high
+    description: Executive revenue and profitability dashboard based on fact_revenue and dim_customer.
+    depends_on:
+      - ref('fact_revenue')
+      - ref('dim_customer')
+    owner:
+      name: Hristina Todorova
+      email: hktodorova@gmail.com

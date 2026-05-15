@@ -1,0 +1,23 @@
+version: 2
+
+sources:
+  - name: raw
+    database: "{{ env_var('SNOWFLAKE_DATABASE', 'ENTERPRISE_DWH') }}"
+    schema: RAW
+    config:
+      freshness:
+        warn_after: {count: 60, period: minute}
+        error_after: {count: 180, period: minute}
+    tables:
+      - name: RAW_ERP_ORDERS
+        config:
+          loaded_at_field: ingested_at
+      - name: RAW_ERP_CUSTOMERS
+        config:
+          loaded_at_field: ingested_at
+      - name: RAW_PAYMENTS
+        config:
+          loaded_at_field: ingested_at
+      - name: RAW_CLICKSTREAM
+        config:
+          loaded_at_field: ingested_at

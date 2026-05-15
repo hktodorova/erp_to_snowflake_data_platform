@@ -1,0 +1,25 @@
+enterprise_snowflake_platform:
+  target: ci
+  outputs:
+    ci:
+      type: snowflake
+      account: "{{ env_var('SNOWFLAKE_ACCOUNT') }}"
+      user: "{{ env_var('SNOWFLAKE_USER') }}"
+      password: "{{ env_var('SNOWFLAKE_PASSWORD') }}"
+      role: "{{ env_var('SNOWFLAKE_ROLE', 'ROLE_TRANSFORM') }}"
+      database: "{{ env_var('SNOWFLAKE_DATABASE', 'ENTERPRISE_DWH') }}"
+      warehouse: "{{ env_var('SNOWFLAKE_WAREHOUSE', 'WH_TRANSFORM') }}"
+      schema: "{{ env_var('SNOWFLAKE_SCHEMA', 'DBT') }}"
+      threads: 4
+      client_session_keep_alive: false
+    prod:
+      type: snowflake
+      account: "{{ env_var('SNOWFLAKE_ACCOUNT') }}"
+      user: "{{ env_var('SNOWFLAKE_USER') }}"
+      password: "{{ env_var('SNOWFLAKE_PASSWORD') }}"
+      role: "{{ env_var('SNOWFLAKE_ROLE', 'ROLE_TRANSFORM') }}"
+      database: "{{ env_var('SNOWFLAKE_DATABASE', 'ENTERPRISE_DWH') }}"
+      warehouse: "{{ env_var('SNOWFLAKE_WAREHOUSE', 'WH_TRANSFORM') }}"
+      schema: "{{ env_var('SNOWFLAKE_SCHEMA', 'DBT') }}"
+      threads: 4
+      client_session_keep_alive: false

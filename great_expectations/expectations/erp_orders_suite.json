@@ -1,0 +1,30 @@
+{
+  "expectation_suite_name": "erp_orders_suite",
+  "expectations": [
+    {
+      "expectation_type": "expect_column_values_to_not_be_null",
+      "kwargs": {"column": "ORDER_ID"}
+    },
+    {
+      "expectation_type": "expect_column_values_to_not_be_null",
+      "kwargs": {"column": "CUSTOMER_ID"}
+    },
+    {
+      "expectation_type": "expect_column_values_to_be_between",
+      "kwargs": {"column": "NET_AMOUNT", "min_value": 0}
+    },
+    {
+      "expectation_type": "expect_column_values_to_be_in_set",
+      "kwargs": {"column": "CURRENCY", "value_set": ["CHF", "EUR", "USD"]}
+    },
+    {
+      "expectation_type": "expect_compound_columns_to_be_unique",
+      "kwargs": {"column_list": ["ORDER_ID", "SOURCE_SYSTEM"]}
+    }
+  ],
+  "meta": {
+    "owner": "data-platform",
+    "severity": "blocking",
+    "description": "Business-critical ERP order quality checks used before mart publication."
+  }
+}

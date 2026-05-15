@@ -1,0 +1,29 @@
+version: 1
+name: erp_orders
+owner: data-platform
+fields:
+  - name: order_id
+    type: string
+    required: true
+  - name: customer_id
+    type: string
+    required: true
+  - name: order_date
+    type: timestamp
+    required: true
+  - name: currency
+    type: string
+    required: true
+    allowed_values: [CHF, EUR, USD, GBP]
+  - name: net_amount
+    type: number
+    required: true
+    constraints:
+      min: 0
+  - name: status
+    type: string
+    required: true
+    allowed_values: [open, released, invoiced, shipped, cancelled, void]
+quality_sla:
+  freshness_minutes: 180
+  duplicate_key_policy: reject

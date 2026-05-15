@@ -1,0 +1,21 @@
+title = "ERP Snowflake Platform Secret Scanning"
+
+[allowlist]
+description = "Allow known-safe examples only"
+paths = [
+  '''\.env\.example$''',
+  '''.*\.tfvars\.example$''',
+  '''docs/.*'''
+]
+
+[[rules]]
+id = "snowflake-password"
+description = "Snowflake password-like assignment"
+regex = '''(?i)(snowflake_)?password\s*=\s*['\"]?[A-Za-z0-9_@#$%^&+=!?.-]{8,}'''
+tags = ["snowflake", "password"]
+
+[[rules]]
+id = "snowflake-accountadmin"
+description = "ACCOUNTADMIN should not be used by application/service users"
+regex = '''(?i)(SNOWFLAKE_ROLE|role)\s*=\s*['\"]?ACCOUNTADMIN'''
+tags = ["snowflake", "privilege"]
