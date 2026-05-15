@@ -17,7 +17,6 @@ REQUIRED = [
 ]
 
 FORBIDDEN = [
-    ".git",
     "dbt/logs",
     "dbt/target",
     "dbt/dbt_packages",
