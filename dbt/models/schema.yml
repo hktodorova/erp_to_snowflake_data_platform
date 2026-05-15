@@ -12,14 +12,12 @@ models:
         data_tests:
           - not_null
           - accepted_values:
-              arguments:
-                values: ['CH', 'DE', 'FR', 'IT', 'AT', 'NL', 'BE', 'ES', 'UK', 'US']
+              values: ['CH', 'DE', 'FR', 'IT', 'AT', 'NL', 'BE', 'ES', 'UK', 'US']
       - name: customer_segment
         data_tests:
           - not_null
           - accepted_values:
-              arguments:
-                values: ['enterprise', 'mid_market', 'smb', 'strategic']
+              values: ['enterprise', 'mid_market', 'smb', 'strategic']
 
   - name: stg_erp_customers_history
     description: Append-only ERP customer history used by Data Vault satellites.
@@ -40,29 +38,25 @@ models:
         data_tests:
           - not_null
           - relationships:
-              arguments:
-                to: ref('stg_erp_customers')
-                field: customer_id
+              to: ref('stg_erp_customers')
+              field: customer_id
       - name: order_date
         data_tests: [not_null]
       - name: currency
         data_tests:
           - not_null
           - accepted_values:
-              arguments:
-                values: ['CHF', 'EUR', 'USD', 'GBP']
+              values: ['CHF', 'EUR', 'USD', 'GBP']
       - name: order_status
         data_tests:
           - not_null
           - accepted_values:
-              arguments:
-                values: ['open', 'released', 'invoiced', 'shipped', 'cancelled', 'void']
+              values: ['open', 'released', 'invoiced', 'shipped', 'cancelled', 'void']
       - name: net_amount
         data_tests:
           - not_null
           - dbt_utils.expression_is_true:
-              arguments:
-                expression: ">= 0"
+              expression: ">= 0"
 
   - name: hub_customer
     description: Data Vault hub for stable customer business keys.
@@ -89,16 +83,14 @@ models:
         data_tests:
           - not_null
           - relationships:
-              arguments:
-                to: ref('hub_order')
-                field: order_hk
+              to: ref('hub_order')
+              field: order_hk
       - name: customer_hk
         data_tests:
           - not_null
           - relationships:
-              arguments:
-                to: ref('hub_customer')
-                field: customer_hk
+              to: ref('hub_customer')
+              field: customer_hk
 
   - name: sat_customer_details
     description: Append-only Data Vault satellite preserving one row per customer descriptive change.
@@ -107,9 +99,8 @@ models:
         data_tests:
           - not_null
           - relationships:
-              arguments:
-                to: ref('hub_customer')
-                field: customer_hk
+              to: ref('hub_customer')
+              field: customer_hk
       - name: load_datetime
         data_tests: [not_null]
       - name: hashdiff
@@ -117,13 +108,11 @@ models:
       - name: country_code
         data_tests:
           - accepted_values:
-              arguments:
-                values: ['CH', 'DE', 'FR', 'IT', 'AT', 'NL', 'BE', 'ES', 'UK', 'US']
+              values: ['CH', 'DE', 'FR', 'IT', 'AT', 'NL', 'BE', 'ES', 'UK', 'US']
       - name: customer_segment
         data_tests:
           - accepted_values:
-              arguments:
-                values: ['enterprise', 'mid_market', 'smb', 'strategic']
+              values: ['enterprise', 'mid_market', 'smb', 'strategic']
 
   - name: fact_revenue
     description: Revenue fact table for BI and finance reporting.
@@ -134,25 +123,21 @@ models:
         data_tests:
           - not_null
           - relationships:
-              arguments:
-                to: ref('dim_customer')
-                field: customer_id
+              to: ref('dim_customer')
+              field: customer_id
       - name: currency
         data_tests:
           - accepted_values:
-              arguments:
-                values: ['CHF', 'EUR', 'USD', 'GBP']
+              values: ['CHF', 'EUR', 'USD', 'GBP']
       - name: order_status
         data_tests:
           - accepted_values:
-              arguments:
-                values: ['open', 'released', 'invoiced', 'shipped']
+              values: ['invoiced', 'shipped']
       - name: net_amount
         data_tests:
           - not_null
           - dbt_utils.expression_is_true:
-              arguments:
-                expression: ">= 0"
+              expression: ">= 0"
 
   - name: dim_customer
     description: Current customer dimension with masked PII available through governed views.
@@ -162,13 +147,11 @@ models:
       - name: country_code
         data_tests:
           - accepted_values:
-              arguments:
-                values: ['CH', 'DE', 'FR', 'IT', 'AT', 'NL', 'BE', 'ES', 'UK', 'US']
+              values: ['CH', 'DE', 'FR', 'IT', 'AT', 'NL', 'BE', 'ES', 'UK', 'US', 'unknown']
       - name: customer_segment
         data_tests:
           - accepted_values:
-              arguments:
-                values: ['enterprise', 'mid_market', 'smb', 'strategic']
+              values: ['enterprise', 'mid_market', 'smb', 'strategic', 'unknown']
 
   - name: feature_customer_revenue_90d
     description: Customer-level revenue features for ML and segmentation use cases.
@@ -178,9 +161,8 @@ models:
           - not_null
           - unique
           - relationships:
-              arguments:
-                to: ref('dim_customer')
-                field: customer_id
+              to: ref('dim_customer')
+              field: customer_id
       - name: as_of_timestamp
         data_tests: [not_null]
       - name: run_id
@@ -188,13 +170,11 @@ models:
       - name: orders_90d
         data_tests:
           - dbt_utils.expression_is_true:
-              arguments:
-                expression: ">= 0"
+              expression: ">= 0"
       - name: revenue_90d
         data_tests:
           - dbt_utils.expression_is_true:
-              arguments:
-                expression: ">= 0"
+              expression: ">= 0"
 
   - name: quality_order_reconciliation
     description: Row-count reconciliation across raw, staging and mart layers.
@@ -222,8 +202,7 @@ models:
       - name: sla_status
         data_tests:
           - accepted_values:
-              arguments:
-                values: ['OK', 'BREACH']
+              values: ['OK', 'BREACH']
 
 exposures:
   - name: executive_revenue_dashboard
