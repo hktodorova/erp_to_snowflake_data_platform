@@ -17,6 +17,15 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
 
+    env:
+      SNOWFLAKE_ACCOUNT: dummy
+      SNOWFLAKE_USER: dummy
+      SNOWFLAKE_PASSWORD: dummy
+      SNOWFLAKE_ROLE: dummy
+      SNOWFLAKE_WAREHOUSE: dummy
+      SNOWFLAKE_DATABASE: dummy
+      SNOWFLAKE_SCHEMA: dummy
+
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
@@ -41,14 +50,6 @@ jobs:
           cd dbt
           dbt deps
           dbt parse --profiles-dir .
-        env:
-          SNOWFLAKE_ACCOUNT: dummy
-          SNOWFLAKE_USER: dummy
-          SNOWFLAKE_PASSWORD: dummy
-          SNOWFLAKE_ROLE: dummy
-          SNOWFLAKE_WAREHOUSE: dummy
-          SNOWFLAKE_DATABASE: dummy
-          SNOWFLAKE_SCHEMA: dummy
 
       - name: SQLFluff lint SQL and dbt models
         run: |
