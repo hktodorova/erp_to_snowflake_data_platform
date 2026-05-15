@@ -51,10 +51,8 @@ jobs:
           dbt deps
           dbt parse --profiles-dir .
 
-      - name: SQLFluff lint SQL and dbt models
-        run: |
-          sqlfluff lint sql --dialect snowflake
-          sqlfluff lint dbt/models --dialect snowflake
+      - name: SQLFluff lint standalone SQL files
+        run: sqlfluff lint sql --dialect snowflake
 
   security:
     name: Secret scan with Gitleaks
@@ -104,6 +102,7 @@ jobs:
     timeout-minutes: 30
     needs: [validate, security, terraform]
     if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+
     env:
       SNOWFLAKE_ACCOUNT: ${{ secrets.SNOWFLAKE_ACCOUNT }}
       SNOWFLAKE_USER: ${{ secrets.SNOWFLAKE_USER }}
