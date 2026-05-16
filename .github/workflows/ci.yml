@@ -33,7 +33,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: "3.11"
           cache: pip
 
       - name: Install dependencies
@@ -45,7 +45,7 @@ jobs:
       - name: Run Python and static project tests
         run: pytest -q
 
-      - name: Validate dbt project can parse without Snowflake credentials
+      - name: Validate dbt project
         run: |
           cd dbt
           dbt deps
@@ -97,7 +97,7 @@ jobs:
         run: terraform validate
 
   dbt-snowflake:
-    name: dbt build on Snowflake
+    name: Optional dbt build on Snowflake
     runs-on: ubuntu-latest
     timeout-minutes: 30
     needs: [validate, security, terraform]
@@ -116,37 +116,46 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v4
 
+      - name: Check if Snowflake secrets are configured
+        id: snowflake_secrets
+        shell: bash
+        run: |
+          if [ -n "$SNOWFLAKE_ACCOUNT" ] && \
+             [ -n "$SNOWFLAKE_USER" ] && \
+             [ -n "$SNOWFLAKE_PASSWORD" ] && \
+             [ -n "$SNOWFLAKE_ROLE" ] && \
+             [ -n "$SNOWFLAKE_DATABASE" ] && \
+             [ -n "$SNOWFLAKE_WAREHOUSE" ] && \
+             [ -n "$SNOWFLAKE_SCHEMA" ]; then
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+            echo "Snowflake secrets configured. Running live dbt validation."
+          else
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            echo "Snowflake secrets not configured. Skipping live Snowflake dbt build."
+          fi
+
       - name: Set up Python
+        if: steps.snowflake_secrets.outputs.configured == 'true'
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: "3.11"
           cache: pip
 
       - name: Install dbt dependencies
+        if: steps.snowflake_secrets.outputs.configured == 'true'
         run: pip install -r requirements.txt
 
-      - name: Check Snowflake secrets are configured
-        run: |
-          missing=0
-          for secret in \
-            SNOWFLAKE_ACCOUNT \
-            SNOWFLAKE_USER \
-            SNOWFLAKE_PASSWORD \
-            SNOWFLAKE_ROLE \
-            SNOWFLAKE_DATABASE \
-            SNOWFLAKE_WAREHOUSE \
-            SNOWFLAKE_SCHEMA; do
-            if [ -z "${!secret}" ]; then
-              echo "Missing required GitHub secret: ${secret}"
-              missing=1
-            fi
-          done
-          exit "$missing"
-
       - name: dbt deps
+        if: steps.snowflake_secrets.outputs.configured == 'true'
         working-directory: dbt
         run: dbt deps
 
+      - name: dbt debug against Snowflake
+        if: steps.snowflake_secrets.outputs.configured == 'true'
+        working-directory: dbt
+        run: dbt debug --profiles-dir . --target ci
+
       - name: dbt build against Snowflake
+        if: steps.snowflake_secrets.outputs.configured == 'true'
         working-directory: dbt
         run: dbt build --profiles-dir . --target ci
